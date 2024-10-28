@@ -1,6 +1,7 @@
 import cors from "@elysiajs/cors";
 import swagger from "@elysiajs/swagger";
 import { Elysia } from "elysia";
+import { validationMiddleware } from "./middleware/validation";
 import { optimalRoute } from "./routers/optimal-route";
 
 const app = new Elysia()
@@ -15,6 +16,7 @@ const app = new Elysia()
             },
         }),
     )
+    .use(validationMiddleware)
     .use(optimalRoute)
     .get("/", () => "Hello Elysia")
     .listen(3000);
