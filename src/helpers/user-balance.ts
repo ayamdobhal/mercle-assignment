@@ -1,11 +1,12 @@
 import { ethers } from "ethers";
 import { ERC20_ABI, PROVIDERS, USDC_ADDRESSES } from "../constants";
+import { Balances } from "../types";
 
 export const getUserBalances = async (
     userAddress: string,
     _tokenAddress: string, // not being used as of now due to hardcoded USDC address.
 ) => {
-    const balances = new Map<number, number>();
+    const balances = new Array<Balances>();
     try {
         const balancePromises = Object.entries(PROVIDERS).map(
             async ([chain, provider]) => {
@@ -17,7 +18,10 @@ export const getUserBalances = async (
                 const balanceWei = await contract.balanceOf(userAddress);
                 const balance = parseFloat(ethers.formatUnits(balanceWei, 18));
                 if (balance > 0) {
-                    balances.set(parseInt(chain), balance);
+                    balances.push({
+                        chainId: parseInt(chain),
+                        amount: balance,
+                    });
                 }
             },
         );
