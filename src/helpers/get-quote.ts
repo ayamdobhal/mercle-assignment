@@ -27,12 +27,12 @@ const getQuote = async (
         if (!response.ok) {
             throw new Error(`Error ${response.status}`);
         }
-        const route = data.result.routes[0];
+        const route = data.result?.routes && data.result.routes[0];
         return {
             sourceChainId: fromChainId,
-            fee: route.totalGasFeesInUsd,
+            fee: route?.totalGasFeesInUsd,
             amount: fromAmount,
-            estimatedTime: route.serviceTime,
+            estimatedTime: route?.serviceTime,
         };
     } catch (error: any) {
         throw new Error(`Quote API Failed due to: ${error.message}`);
