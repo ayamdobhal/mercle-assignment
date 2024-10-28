@@ -23,7 +23,7 @@ export const ERC20_ABI = [
 ];
 
 // Hard coded USDC Addresses across different chains for now.
-export const USDC_ADDRESSES: { [key: string]: string } = {
+export const USDC_ADDRESSES: { [key: number]: string } = {
     1: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
     56: "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d",
     250: "0x04068DA6C83AFCFA0e13ba15A6696662335D5B75",
