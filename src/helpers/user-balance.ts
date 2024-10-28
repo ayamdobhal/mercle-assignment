@@ -16,7 +16,10 @@ export const getUserBalances = async (
                     provider,
                 );
                 const balanceWei = await contract.balanceOf(userAddress);
-                const balance = parseFloat(ethers.formatUnits(balanceWei, 18));
+                const decimals = await contract.decimals();
+                const balance = parseFloat(
+                    ethers.formatUnits(balanceWei, decimals),
+                );
                 if (balance > 0) {
                     balances.push({
                         chainId: parseInt(chain),

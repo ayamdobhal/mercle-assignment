@@ -20,6 +20,7 @@ export const PROVIDERS = {
 
 export const ERC20_ABI = [
     "function balanceOf(address owner) view returns (uint256)",
+    "function decimals() view returns (uint8)",
 ];
 
 // Hard coded USDC Addresses across different chains for now.
