@@ -1,3 +1,5 @@
+import { BridgeFee } from "../types";
+
 export const getQuote = async (
     fromChainId: number,
     fromTokenAddress: string,
@@ -7,7 +9,7 @@ export const getQuote = async (
     userAddress: string,
     uniqueRoutesPerBridge: boolean = true,
     sort: string = "gas",
-) => {
+): Promise<BridgeFee> => {
     try {
         const response = await fetch(
             `https://api.socket.tech/v2/quote?fromChainId=${fromChainId}&fromTokenAddress=${fromTokenAddress}&toChainId=${toChainId}&toTokenAddress=${toTokenAddress}&fromAmount=${fromAmount}&userAddress=${userAddress}&uniqueRoutesPerBridge=${uniqueRoutesPerBridge}&sort=${sort}`,
@@ -24,7 +26,12 @@ export const getQuote = async (
         if (!response.ok) {
             throw new Error(`Error ${response.status}`);
         }
-        return data.result.routes[0].totalGasFeesInUsd;
+        const route = data.result.routes[0];
+        return {
+            sourceChainId: fromChainId,
+            fee: route.totalGasFeesInUsd,
+            estimatedTime: route.serviceTime,
+        };
     } catch (error: any) {
         throw new Error(`Quote API Failed due to: ${error.message}`);
     }
