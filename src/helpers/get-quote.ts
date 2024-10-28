@@ -1,6 +1,7 @@
-import { BridgeFee } from "../types";
+import { USDC_ADDRESSES } from "../constants";
+import { Balances, BridgeFee } from "../types";
 
-export const getQuote = async (
+const getQuote = async (
     fromChainId: number,
     fromTokenAddress: string,
     toChainId: number,
@@ -30,9 +31,38 @@ export const getQuote = async (
         return {
             sourceChainId: fromChainId,
             fee: route.totalGasFeesInUsd,
+            amount: fromAmount,
             estimatedTime: route.serviceTime,
         };
     } catch (error: any) {
         throw new Error(`Quote API Failed due to: ${error.message}`);
+    }
+};
+
+export const getRoutes = async (
+    balances: Balances[],
+    userAddress: string,
+    targetChain: number,
+) => {
+    const bridgeFees = new Array<BridgeFee>();
+    try {
+        const quotePromises = balances.map(async ({ chainId, amount }) => {
+            if (chainId === targetChain) return;
+            const quote = await getQuote(
+                chainId,
+                USDC_ADDRESSES[chainId],
+                targetChain,
+                USDC_ADDRESSES[chainId],
+                amount,
+                userAddress,
+            );
+            bridgeFees.push(quote);
+        });
+        await Promise.all(quotePromises);
+        return bridgeFees;
+    } catch (error: any) {
+        throw new Error(
+            `Calculating Bridging Fees failed due to: ${error.message}`,
+        );
     }
 };

@@ -6,5 +6,6 @@ export interface Balances {
 export interface BridgeFee {
     sourceChainId: number;
     fee: number;
+    amount: number;
     estimatedTime: number;
 }
