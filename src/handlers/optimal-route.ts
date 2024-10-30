@@ -1,6 +1,8 @@
-import { getRoutes } from "../helpers/get-quote";
+import { findOptimalPath } from "../helpers/find-routes";
+import { getQuote } from "../helpers/get-quote";
 import { getUserBalances } from "../helpers/user-balance";
-import { APIResponse, Route } from "../types";
+import { APIResponse, ChainQuote, Path } from "../types";
+import { getChainName, usdcForChain } from "../utils";
 
 export const optimalRouteHandler = async ({
     query,
@@ -12,37 +14,95 @@ export const optimalRouteHandler = async ({
             query.userAddress,
             query.tokenAddress,
         );
-        const bridgeFees = await getRoutes(
-            userBalances,
-            query.userAddress,
-            query.targetChain,
-        );
-        let requiredAmount = 0;
-        const targetChainBalance = userBalances.find(
-            ({ chainId }) => chainId === query.targetChain,
-        )?.amount;
-        if (targetChainBalance) {
-            requiredAmount -= targetChainBalance;
-        }
-        const route: Route = {
-            path: [],
-            totalFee: 0,
+        let requiredAmount = query.amount;
+        const targetChainBalance =
+            userBalances.find(({ chainId }) => chainId === query.targetChain)
+                ?.amount || 0;
+        requiredAmount = Math.max(0, requiredAmount - targetChainBalance);
+        let optimalRoute: Path = {
+            routes: [],
+            totalGas: 0,
             totalTime: 0,
         };
-        bridgeFees
-            .sort((a, b) => a.fee - b.fee)
-            .forEach((path) => {
-                if (requiredAmount <= 0) {
-                    return;
+        if (requiredAmount === 0) {
+            return {
+                success: true,
+                route: optimalRoute,
+            };
+        }
+        const sourceChains = userBalances.filter(
+            ({ chainId }) => chainId !== query.targetChain,
+        );
+        if (sourceChains.length === 1) {
+            const balance = sourceChains[0];
+            const quote = await getQuote(
+                balance.chainId,
+                usdcForChain(balance.chainId),
+                query.targetChain,
+                usdcForChain(query.targetChain),
+                requiredAmount,
+                query.userAddress,
+            );
+            if (quote.success && quote.result.routes.length > 0) {
+                const route = quote.result.routes[0];
+                return {
+                    success: true,
+                    route: {
+                        routes: [
+                            {
+                                path: `${getChainName(balance.chainId)} -> ${getChainName(query.targetChain)}`,
+                                amount: requiredAmount,
+                                gasFee: route.totalGasFeesInUsd,
+                                estimatedTime: route.serviceTime,
+                            },
+                        ],
+                        totalGas: route.totalGasFeesInUsd,
+                        totalTime: route.serviceTime,
+                    },
+                };
+            }
+        }
+
+        const chainQuotes: ChainQuote[] = await Promise.all(
+            sourceChains.map(async (balance) => {
+                try {
+                    const amount = Math.min(balance.amount, requiredAmount);
+                    const quote = await getQuote(
+                        balance.chainId,
+                        usdcForChain(balance.chainId),
+                        query.targetChain,
+                        usdcForChain(query.targetChain),
+                        amount,
+                        query.userAddress,
+                    );
+                    if (!quote.success && quote.result.routes.length === 0)
+                        return null;
+                    const route = quote.result.routes[0];
+                    return {
+                        chainId: balance.chainId,
+                        availableAmount: balance.amount,
+                        gasFee: route.totalGasFeesInUsd,
+                        estimatedTime: route.serviceTime,
+                        efficiency:
+                            Number(route.amount) / route.totalGasFeesInUsd,
+                    };
+                } catch {
+                    return null;
                 }
-                route.path.push(path);
-                route.totalFee += path.fee;
-                route.totalTime += path.estimatedTime;
-                requiredAmount -= path.amount;
-            });
+            }),
+        ).then((quotes) => quotes.filter((q): q is ChainQuote => q !== null));
+
+        chainQuotes.sort((a, b) => b.efficiency - a.efficiency);
+        optimalRoute = await findOptimalPath(
+            chainQuotes,
+            query.targetChain,
+            query.userAddress,
+            requiredAmount,
+        );
+
         return {
             success: true,
-            route: route,
+            route: optimalRoute,
         };
     } catch (error: any) {
         return {

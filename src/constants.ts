@@ -23,6 +23,24 @@ export const ERC20_ABI = [
     "function decimals() view returns (uint8)",
 ];
 
+export const CHAIN_NAMES: { [key: number]: string } = {
+    1: "Ethereum",
+    56: "Binance Smart Chain (BSC)",
+    250: "Fantom",
+    43114: "Avalanche",
+    10: "Optimism",
+    42161: "Arbitrum",
+    100: "Gnosis Chain",
+    137: "Polygon",
+    1313161554: "Aurora",
+    324: "zkSync Era",
+    1101: "Polygon zkEVM",
+    8453: "Base Chain",
+    59144: "Linea",
+    5000: "Mantle",
+    534352: "Scroll",
+};
+
 // Hard coded USDC Addresses across different chains for now.
 export const USDC_ADDRESSES: { [key: number]: string } = {
     1: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",

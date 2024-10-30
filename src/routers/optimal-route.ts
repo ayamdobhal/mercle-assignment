@@ -15,15 +15,15 @@ export const optimalRoute = new Elysia().get(
             success: t.Boolean(),
             route: t.Optional(
                 t.Object({
-                    path: t.Array(
+                    routes: t.Array(
                         t.Object({
-                            sourceChainId: t.Number(),
-                            fee: t.Number(),
+                            path: t.String(),
                             amount: t.Number(),
+                            gasFee: t.Number(),
                             estimatedTime: t.Number(),
                         }),
                     ),
-                    totalFee: t.Number(),
+                    totalGas: t.Number(),
                     totalTime: t.Number(),
                 }),
             ),
